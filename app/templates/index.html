@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор палитры</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="container">
+    <h1>Генератор палитры коллекции</h1>
+    <form method="post" action="/generate" class="form-grid">
+        <label>Сезон
+            <select name="season">
+                <option value="none" {% if defaults.season == 'none' %}selected{% endif %}>none</option>
+                <option value="SS" {% if defaults.season == 'SS' %}selected{% endif %}>SS</option>
+                <option value="FW" {% if defaults.season == 'FW' %}selected{% endif %}>FW</option>
+            </select>
+        </label>
+
+        <label>Аудитория
+            <select name="audience">
+                <option value="none" {% if defaults.audience == 'none' %}selected{% endif %}>none</option>
+                <option value="mass" {% if defaults.audience == 'mass' %}selected{% endif %}>mass</option>
+                <option value="middle" {% if defaults.audience == 'middle' %}selected{% endif %}>middle</option>
+                <option value="premium" {% if defaults.audience == 'premium' %}selected{% endif %}>premium</option>
+            </select>
+        </label>
+
+        <label>Стиль
+            <select name="style">
+                <option value="none" {% if defaults.style == 'none' %}selected{% endif %}>none</option>
+                <option value="minimal" {% if defaults.style == 'minimal' %}selected{% endif %}>minimal</option>
+                <option value="street" {% if defaults.style == 'street' %}selected{% endif %}>street</option>
+                <option value="romantic" {% if defaults.style == 'romantic' %}selected{% endif %}>romantic</option>
+                <option value="classic" {% if defaults.style == 'classic' %}selected{% endif %}>classic</option>
+                <option value="sport" {% if defaults.style == 'sport' %}selected{% endif %}>sport</option>
+            </select>
+        </label>
+
+        <label>Формат ключевого цвета
+            <select name="key_color_mode">
+                <option value="hex" {% if defaults.key_color_mode == 'hex' %}selected{% endif %}>HEX</option>
+                <option value="rgb">RGB</option>
+                <option value="cmyk">CMYK</option>
+                <option value="lab">LAB</option>
+                <option value="tcx_code">TCX номер</option>
+                <option value="tcx_name">TCX название</option>
+            </select>
+        </label>
+
+        <label>Значение ключевого цвета
+            <input name="key_color_value" value="{{ defaults.key_color_value }}" placeholder="#D26C31 | 210,108,49 | 0,49,77,18 | 58,25,45 | 17-0836 | Ecru Olive">
+        </label>
+
+        <label>Роль ключевого цвета
+            <select name="key_color_role">
+                <option value="accent" {% if defaults.key_color_role == 'accent' %}selected{% endif %}>accent</option>
+                <option value="base" {% if defaults.key_color_role == 'base' %}selected{% endif %}>base</option>
+            </select>
+        </label>
+
+        <label>Количество цветов
+            <input type="number" min="5" max="7" name="count" value="{{ defaults.count }}">
+        </label>
+
+        <button type="submit">Сгенерировать</button>
+    </form>
+
+    <h2 style="margin-top: 20px;">Определить цвета из фото (TCX)</h2>
+    <form method="post" action="/photo/analyze" class="form-grid" enctype="multipart/form-data">
+        <label>Фото
+            <input type="file" name="image" accept="image/*" required>
+        </label>
+        <label>Сколько цветов извлечь
+            <input type="number" name="count" min="1" max="12" value="6">
+        </label>
+        <button type="submit">Анализировать фото</button>
+    </form>
+
+    <h2 style="margin-top: 20px;">Пипетка: выбрать цвет на фото</h2>
+    <div class="form-grid">
+        <label>Фото для пипетки
+            <input type="file" id="pipetteImageInput" accept="image/*">
+        </label>
+        <label>Подсказка
+            <input value="Загрузите фото и кликните по изображению" readonly>
+        </label>
+    </div>
+
+    <div class="picker-wrap">
+        <canvas id="pipetteCanvas" class="picker-canvas"></canvas>
+        <div class="picker-side">
+            <div class="color-tile">
+                <a id="pickedSwatchLink" href="#" class="swatch-link" style="pointer-events: none;">
+                    <div id="pickedSwatch" class="swatch tile-swatch"></div>
+                </a>
+                <div class="tile-title" id="pickedName">Без названия</div>
+                <div class="tile-role">Picked Color</div>
+                <div class="tile-meta">HEX: <code id="pickedHex">—</code></div>
+                <div class="tile-meta">RGB: <span id="pickedRgb">—</span></div>
+                <div class="tile-meta">CMYK: <span id="pickedCmyk">—</span></div>
+                <div class="tile-meta">LAB: <span id="pickedLab">—</span></div>
+            </div>
+            <p style="margin-top:10px;"><strong>TCX top-3:</strong></p>
+            <div id="pickedMatches" class="tcx-mini-grid"></div>
+        </div>
+    </div>
+</div>
+<script>
+(() => {
+  const input = document.getElementById("pipetteImageInput");
+  const canvas = document.getElementById("pipetteCanvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const hexEl = document.getElementById("pickedHex");
+  const rgbEl = document.getElementById("pickedRgb");
+  const cmykEl = document.getElementById("pickedCmyk");
+  const labEl = document.getElementById("pickedLab");
+  const nameEl = document.getElementById("pickedName");
+  const swatchEl = document.getElementById("pickedSwatch");
+  const swatchLinkEl = document.getElementById("pickedSwatchLink");
+  const matchesEl = document.getElementById("pickedMatches");
+  let imageLoaded = false;
+
+  function toHex(v) {
+    return v.toString(16).padStart(2, "0").toUpperCase();
+  }
+  function rgbToCmyk(r, g, b) {
+    const rr = r / 255, gg = g / 255, bb = b / 255;
+    const k = 1 - Math.max(rr, gg, bb);
+    if (k >= 1) return "0, 0, 0, 100";
+    const c = ((1 - rr - k) / (1 - k)) * 100;
+    const m = ((1 - gg - k) / (1 - k)) * 100;
+    const y = ((1 - bb - k) / (1 - k)) * 100;
+    return `${c.toFixed(1)}, ${m.toFixed(1)}, ${y.toFixed(1)}, ${(k * 100).toFixed(1)}`;
+  }
+
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      imageLoaded = true;
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  canvas.addEventListener("click", async (e) => {
+    if (!imageLoaded) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const r = pixel[0], g = pixel[1], b = pixel[2];
+    const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+    swatchEl.style.background = hex;
+    hexEl.textContent = hex;
+    rgbEl.textContent = `${r}, ${g}, ${b}`;
+    cmykEl.textContent = rgbToCmyk(r, g, b);
+    labEl.textContent = "—";
+    nameEl.textContent = "Без названия";
+    matchesEl.innerHTML = "<div class=\"tcx-mini-card\">поиск...</div>";
+
+    try {
+      const resp = await fetch("/api/tcx/match-color", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hex, k: 3 })
+      });
+      if (!resp.ok) {
+        matchesEl.innerHTML = "<li>Ошибка сопоставления</li>";
+        return;
+      }
+      const data = await resp.json();
+      matchesEl.innerHTML = "";
+      for (const m of data.tcx_matches) {
+        const chip = document.createElement("a");
+        chip.className = "tcx-mini-card";
+        chip.href = `/tcx/${m.code}`;
+        chip.innerHTML = `<div class=\"swatch shade-swatch\" style=\"background:${m.hex || '#cccccc'}\"></div><div class=\"tile-title\">${m.name}</div><div class=\"tile-role\">Top match</div><div class=\"tile-meta\">HEX: <code>${m.hex || '—'}</code></div><div class=\"tile-meta\">RGB: ${m.rgb || '—'}</div><div class=\"tile-meta\">CMYK: ${m.cmyk || '—'}</div><div class=\"tile-meta\">LAB: ${m.lab || '—'}</div>`;
+        matchesEl.appendChild(chip);
+      }
+      labEl.textContent = data.lab || "—";
+      if (data.tcx_matches.length) {
+        nameEl.textContent = data.tcx_matches[0].name || "Без названия";
+        cmykEl.textContent = data.tcx_matches[0].cmyk || "—";
+        swatchLinkEl.href = `/tcx/${data.tcx_matches[0].code}`;
+        swatchLinkEl.style.pointerEvents = "auto";
+      } else {
+        swatchLinkEl.href = "#";
+        swatchLinkEl.style.pointerEvents = "none";
+      }
+      if (!data.tcx_matches.length) {
+        matchesEl.innerHTML = "<div class=\"tcx-mini-card\">Совпадений не найдено</div>";
+      }
+    } catch {
+      matchesEl.innerHTML = "<div class=\"tcx-mini-card\">Ошибка сети</div>";
+    }
+  });
+})();
+</script>
+</body>
+</html>

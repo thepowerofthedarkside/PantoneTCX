@@ -1,0 +1,25 @@
+﻿code,name,l,a,b
+P-Black,Black,20.0,0.0,0.0
+P-White,White,97.0,0.0,0.0
+P-CoolGray,Cool Gray,60.0,0.5,-1.0
+P-WarmGray,Warm Gray,62.0,2.0,4.0
+P-Red,Red,52.0,72.0,48.0
+P-Crimson,Crimson,45.0,65.0,22.0
+P-Orange,Orange,70.0,38.0,64.0
+P-Yellow,Yellow,90.0,-8.0,88.0
+P-Lime,Lime,82.0,-45.0,70.0
+P-Green,Green,58.0,-48.0,32.0
+P-Teal,Teal,52.0,-28.0,-6.0
+P-Cyan,Cyan,78.0,-36.0,-22.0
+P-Blue,Blue,42.0,12.0,-56.0
+P-Navy,Navy,28.0,8.0,-36.0
+P-Violet,Violet,46.0,38.0,-36.0
+P-Magenta,Magenta,58.0,76.0,-8.0
+P-Pink,Pink,76.0,28.0,2.0
+P-Brown,Brown,42.0,18.0,30.0
+P-Beige,Beige,82.0,4.0,16.0
+P-Sand,Sand,74.0,6.0,28.0
+P-Olive,Olive,48.0,-10.0,34.0
+P-Sky,Sky,82.0,-16.0,-22.0
+P-Steel,Steel,56.0,-2.0,-8.0
+P-Ivory,Ivory,95.0,0.5,6.0

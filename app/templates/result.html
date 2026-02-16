@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат палитры</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="container">
+    <h1>Палитра коллекции</h1>
+    <p>ID: <code>{{ id }}</code></p>
+    <p>
+        Входные параметры:
+        season={{ input.season }}, audience={{ input.audience }}, style={{ input.style }},
+        count={{ input.count }}
+    </p>
+    <p>
+        Ключевой цвет:
+        mode={{ input.key_color_mode or 'legacy_hex' }},
+        role={{ input.key_color_role or 'accent' }},
+        value={{ input.key_color_value or input.key_color or 'не задан' }}
+    </p>
+
+    <a class="button" href="/api/palette/{{ id }}/pdf">Скачать PDF</a>
+    <a class="button secondary" href="/">Новая генерация</a>
+
+    <div class="palette-grid">
+        {% for item in palette %}
+        {% set top = item.pantone_matches[0] if item.pantone_matches else None %}
+        <div class="color-tile">
+            {% if top and top.code %}
+            <a href="/tcx/{{ top.code }}" class="swatch-link">
+                <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
+            </a>
+            {% else %}
+            <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
+            {% endif %}
+
+            <div class="tile-title">{{ top.name if top else 'Без названия' }}</div>
+            <div class="tile-role">{{ item.role }} ({{ item.percent }}%)</div>
+            <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
+            <div class="tile-meta">RGB: {{ item.rgb }}</div>
+            <div class="tile-meta">CMYK: {{ item.cmyk }}</div>
+            <div class="tile-meta">LAB: {{ item.lab }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2>TCX top-3</h2>
+    <div class="palette-grid">
+        {% for item in palette %}
+            {% for p in item.pantone_matches %}
+            <a class="color-tile" href="/tcx/{{ p.code }}">
+                <div class="swatch tile-swatch" style="background: {{ p.hex or '#cccccc' }};"></div>
+                <div class="tile-title">{{ p.name }}</div>
+                <div class="tile-role">Top match</div>
+                <div class="tile-meta">HEX: <code>{{ p.hex or '—' }}</code></div>
+                <div class="tile-meta">RGB: {{ p.rgb or '—' }}</div>
+                <div class="tile-meta">CMYK: {{ p.cmyk or '—' }}</div>
+                <div class="tile-meta">LAB: {{ p.lab or '—' }}</div>
+            </a>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

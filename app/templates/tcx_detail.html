@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ color.code }} — {{ color.name }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="container">
+    <h1>{{ color.code }} — {{ color.name }}</h1>
+
+    <div class="tcx-layout">
+        <div>
+            <div class="color-tile" style="max-width: 720px;">
+                <a href="/tcx/{{ color.code }}" class="swatch-link">
+                    <div class="swatch tile-swatch" style="background: {{ color.hex }};"></div>
+                </a>
+                <div class="tile-title">{{ color.name }}</div>
+                <div class="tile-role">Base Color</div>
+                <div class="tile-meta">HEX: <code>{{ color.hex }}</code></div>
+                <div class="tile-meta">RGB: {{ color.rgb }}</div>
+                <div class="tile-meta">CMYK: {{ color.cmyk }}</div>
+                <div class="tile-meta">LAB: {{ color.lab }}</div>
+            </div>
+
+            <h2>Shades</h2>
+            <div class="palette-grid">
+                {% for s in color.shades %}
+                {% set n = s.nearest_tcx %}
+                <div class="color-tile">
+                    {% if n %}
+                    <a href="/tcx/{{ n.code }}" class="swatch-link">
+                        <div class="swatch tile-swatch" style="background: {{ s.hex }};"></div>
+                    </a>
+                    {% else %}
+                    <div class="swatch tile-swatch" style="background: {{ s.hex }};"></div>
+                    {% endif %}
+                    <div class="tile-title">{{ n.name if n else 'Без названия' }}</div>
+                    <div class="tile-role">{{ s.label }}</div>
+                    <div class="tile-meta">HEX: <code>{{ s.hex }}</code></div>
+                    <div class="tile-meta">RGB: {{ s.rgb }}</div>
+                    <div class="tile-meta">CMYK: {{ s.cmyk }}</div>
+                    <div class="tile-meta">LAB: {{ s.lab }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <h2>Цветовые гармонии</h2>
+            {% for g in color.harmonies %}
+            <h3>{{ g.name }}</h3>
+            <div class="palette-grid">
+                {% for h in g["items"] %}
+                {% set n = h.nearest_tcx %}
+                <div class="color-tile">
+                    {% if n %}
+                    <a href="/tcx/{{ n.code }}" class="swatch-link">
+                        <div class="swatch tile-swatch" style="background: {{ h.hex }};"></div>
+                    </a>
+                    {% else %}
+                    <div class="swatch tile-swatch" style="background: {{ h.hex }};"></div>
+                    {% endif %}
+                    <div class="tile-title">{{ n.name if n else 'Без названия' }}</div>
+                    <div class="tile-role">{{ h.label }}</div>
+                    <div class="tile-meta">HEX: <code>{{ h.hex }}</code></div>
+                    <div class="tile-meta">RGB: {{ h.rgb }}</div>
+                    <div class="tile-meta">CMYK: {{ h.cmyk }}</div>
+                    <div class="tile-meta">LAB: {{ h.lab }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <h2>Похожие TCX</h2>
+            <div class="palette-grid">
+                {% for s in color.similar %}
+                <a class="color-tile" href="/tcx/{{ s.code }}">
+                    <div class="swatch tile-swatch" style="background: {{ s.hex or '#cccccc' }};"></div>
+                    <div class="tile-title">{{ s.name }}</div>
+                    <div class="tile-role">Similar</div>
+                    <div class="tile-meta">HEX: <code>{{ s.hex or '—' }}</code></div>
+                    <div class="tile-meta">RGB: {{ s.rgb or '—' }}</div>
+                    <div class="tile-meta">CMYK: {{ s.cmyk or '—' }}</div>
+                    <div class="tile-meta">LAB: {{ s.lab or '—' }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <aside>
+            <h2>Палитра коллекции</h2>
+            <div class="color-card" style="margin-bottom: 10px;">
+                <p>Построено с этим цветом как <strong>base</strong>.</p>
+            </div>
+            <div class="palette-grid palette-grid-compact">
+                {% for item in color.collection_preview %}
+                {% set top = item.pantone_matches[0] if item.pantone_matches else None %}
+                <div class="color-tile">
+                    {% if top and top.code %}
+                    <a href="/tcx/{{ top.code }}" class="swatch-link">
+                        <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
+                    </a>
+                    {% else %}
+                    <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
+                    {% endif %}
+                    <div class="tile-title">{{ top.name if top else 'Без названия' }}</div>
+                    <div class="tile-role">{{ item.role }} ({{ item.percent }}%)</div>
+                    <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
+                    <div class="tile-meta">RGB: {{ item.rgb }}</div>
+                    <div class="tile-meta">CMYK: {{ item.cmyk }}</div>
+                    <div class="tile-meta">LAB: {{ item.lab }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
+    </div>
+
+    <a class="button secondary" href="/">На главную</a>
+</div>
+</body>
+</html>
