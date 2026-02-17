@@ -183,12 +183,14 @@
         const chip = document.createElement("a");
         chip.className = "tcx-mini-card";
         chip.href = `/tcx/${m.code}`;
-        chip.innerHTML = `<div class=\"swatch shade-swatch\" style=\"background:${m.hex || '#cccccc'}\"></div><div class=\"tile-title\">${m.name}</div><div class=\"tile-role\">Top match</div><div class=\"tile-meta\">HEX: <code>${m.hex || '—'}</code></div><div class=\"tile-meta\">RGB: ${m.rgb || '—'}</div><div class=\"tile-meta\">CMYK: ${m.cmyk || '—'}</div><div class=\"tile-meta\">LAB: ${m.lab || '—'}</div>`;
+        chip.innerHTML = `<div class=\"swatch shade-swatch\" style=\"background:${m.hex || '#cccccc'}\"></div><div class=\"tile-title\">${m.name}${m.code ? ` (${m.code} TCX)` : ""}</div><div class=\"tile-role\">Top match</div><div class=\"tile-meta\">HEX: <code>${m.hex || '—'}</code></div><div class=\"tile-meta\">RGB: ${m.rgb || '—'}</div><div class=\"tile-meta\">CMYK: ${m.cmyk || '—'}</div><div class=\"tile-meta\">LAB: ${m.lab || '—'}</div>`;
         matchesEl.appendChild(chip);
       }
       labEl.textContent = data.lab || "—";
       if (data.tcx_matches.length) {
-        nameEl.textContent = data.tcx_matches[0].name || "Без названия";
+        nameEl.textContent = data.tcx_matches[0].name
+          ? `${data.tcx_matches[0].name}${data.tcx_matches[0].code ? ` (${data.tcx_matches[0].code} TCX)` : ""}`
+          : "Без названия";
         cmykEl.textContent = data.tcx_matches[0].cmyk || "—";
         swatchLinkEl.href = `/tcx/${data.tcx_matches[0].code}`;
         swatchLinkEl.style.pointerEvents = "auto";

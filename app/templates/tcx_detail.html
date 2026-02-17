@@ -16,7 +16,7 @@
                 <a href="/tcx/{{ color.code }}" class="swatch-link">
                     <div class="swatch tile-swatch" style="background: {{ color.hex }};"></div>
                 </a>
-                <div class="tile-title">{{ color.name }}</div>
+                <div class="tile-title">{{ color.name }}{% if color.code %} ({{ color.code }} TCX){% endif %}</div>
                 <div class="tile-role">Base Color</div>
                 <div class="tile-meta">HEX: <code>{{ color.hex }}</code></div>
                 <div class="tile-meta">RGB: {{ color.rgb }}</div>
@@ -36,7 +36,9 @@
                     {% else %}
                     <div class="swatch tile-swatch" style="background: {{ s.hex }};"></div>
                     {% endif %}
-                    <div class="tile-title">{{ n.name if n else 'Без названия' }}</div>
+                    <div class="tile-title">
+                        {{ n.name if n else 'Без названия' }}{% if n and n.code %} ({{ n.code }} TCX){% endif %}
+                    </div>
                     <div class="tile-role">{{ s.label }}</div>
                     <div class="tile-meta">HEX: <code>{{ s.hex }}</code></div>
                     <div class="tile-meta">RGB: {{ s.rgb }}</div>
@@ -60,7 +62,9 @@
                     {% else %}
                     <div class="swatch tile-swatch" style="background: {{ h.hex }};"></div>
                     {% endif %}
-                    <div class="tile-title">{{ n.name if n else 'Без названия' }}</div>
+                    <div class="tile-title">
+                        {{ n.name if n else 'Без названия' }}{% if n and n.code %} ({{ n.code }} TCX){% endif %}
+                    </div>
                     <div class="tile-role">{{ h.label }}</div>
                     <div class="tile-meta">HEX: <code>{{ h.hex }}</code></div>
                     <div class="tile-meta">RGB: {{ h.rgb }}</div>
@@ -76,7 +80,7 @@
                 {% for s in color.similar %}
                 <a class="color-tile" href="/tcx/{{ s.code }}">
                     <div class="swatch tile-swatch" style="background: {{ s.hex or '#cccccc' }};"></div>
-                    <div class="tile-title">{{ s.name }}</div>
+                    <div class="tile-title">{{ s.name }}{% if s.code %} ({{ s.code }} TCX){% endif %}</div>
                     <div class="tile-role">Similar</div>
                     <div class="tile-meta">HEX: <code>{{ s.hex or '—' }}</code></div>
                     <div class="tile-meta">RGB: {{ s.rgb or '—' }}</div>
@@ -103,7 +107,9 @@
                     {% else %}
                     <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
                     {% endif %}
-                    <div class="tile-title">{{ top.name if top else 'Без названия' }}</div>
+                    <div class="tile-title">
+                        {{ top.name if top else 'Без названия' }}{% if top and top.code %} ({{ top.code }} TCX){% endif %}
+                    </div>
                     <div class="tile-role">{{ item.role }} ({{ item.percent }}%)</div>
                     <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
                     <div class="tile-meta">RGB: {{ item.rgb }}</div>

@@ -25,7 +25,9 @@
             {% else %}
             <div class="swatch tile-swatch" style="background: {{ item.hex }};"></div>
             {% endif %}
-            <div class="tile-title">{{ top.name if top else 'Без названия' }}</div>
+            <div class="tile-title">
+                {{ top.name if top else 'Без названия' }}{% if top and top.code %} ({{ top.code }} TCX){% endif %}
+            </div>
             <div class="tile-role">Dominant {{ loop.index }} ({{ item.percent }}%)</div>
             <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
             <div class="tile-meta">RGB: {{ item.rgb }}</div>
@@ -41,7 +43,7 @@
             {% for p in item.tcx_matches %}
             <a class="color-tile" href="/tcx/{{ p.code }}">
                 <div class="swatch tile-swatch" style="background: {{ p.hex or '#cccccc' }};"></div>
-                <div class="tile-title">{{ p.name }}</div>
+                <div class="tile-title">{{ p.name }}{% if p.code %} ({{ p.code }} TCX){% endif %}</div>
                 <div class="tile-role">Top match</div>
                 <div class="tile-meta">HEX: <code>{{ p.hex or '—' }}</code></div>
                 <div class="tile-meta">RGB: {{ p.rgb or '—' }}</div>
