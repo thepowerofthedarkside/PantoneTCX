@@ -8,18 +8,27 @@
 </head>
 <body>
 <div class="container">
+    <nav class="top-menu" aria-label="Главное меню">
+        <a href="/">Главная страница</a>
+        <a href="/#palette-generator">Генератор палитры</a>
+        <a href="/#color-converter">Конвертация цвета</a>
+        <a href="/#photo-analysis">Анализ фото</a>
+    </nav>
+
     <h1>Палитра коллекции</h1>
     <p>ID: <code>{{ id }}</code></p>
     <p>
         Входные параметры:
-        season={{ input.season }}, audience={{ input.audience }}, style={{ input.style }},
-        count={{ input.count }}
+        сезон={% if input.season == "SS" %}весна-лето{% elif input.season == "FW" %}осень-зима{% else %}не задан{% endif %},
+        аудитория={% if input.audience == "mass" %}массовая{% elif input.audience == "middle" %}средний сегмент{% elif input.audience == "premium" %}премиум{% else %}не задана{% endif %},
+        стиль={% if input.style == "minimal" %}минимализм{% elif input.style == "street" %}стрит{% elif input.style == "romantic" %}романтика{% elif input.style == "classic" %}классика{% elif input.style == "sport" %}спорт{% else %}не задан{% endif %},
+        количество={{ input.count }}
     </p>
     <p>
         Ключевой цвет:
-        mode={{ input.key_color_mode or 'legacy_hex' }},
-        role={{ input.key_color_role or 'accent' }},
-        value={{ input.key_color_value or input.key_color or 'не задан' }}
+        режим={% if not input.key_color_mode %}устаревший HEX{% elif input.key_color_mode == "hex" %}HEX{% elif input.key_color_mode == "rgb" %}RGB{% elif input.key_color_mode == "cmyk" %}CMYK{% elif input.key_color_mode == "lab" %}LAB{% elif input.key_color_mode == "tcx_code" %}код TCX{% else %}название TCX{% endif %},
+        роль={% if input.key_color_role == "base" %}база{% else %}акцент{% endif %},
+        значение={{ input.key_color_value or input.key_color or 'не задан' }}
     </p>
 
     <a class="button" href="/api/palette/{{ id }}/pdf">Скачать PDF</a>
@@ -40,7 +49,7 @@
             <div class="tile-title">
                 {{ top.name if top else 'Без названия' }}{% if top and top.code %} ({{ top.code }} TCX){% endif %}
             </div>
-            <div class="tile-role">{{ item.role }} ({{ item.percent }}%)</div>
+            <div class="tile-role">{% if item.role == "base" %}база{% elif item.role == "support" %}поддержка{% else %}акцент{% endif %} ({{ item.percent }}%)</div>
             <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
             <div class="tile-meta">RGB: {{ item.rgb }}</div>
             <div class="tile-meta">CMYK: {{ item.cmyk }}</div>
@@ -49,14 +58,14 @@
         {% endfor %}
     </div>
 
-    <h2>TCX top-3</h2>
+    <h2>TCX: топ-3</h2>
     <div class="palette-grid">
         {% for item in palette %}
             {% for p in item.pantone_matches %}
             <a class="color-tile" href="/tcx/{{ p.code }}">
                 <div class="swatch tile-swatch" style="background: {{ p.hex or '#cccccc' }};"></div>
                 <div class="tile-title">{{ p.name }}{% if p.code %} ({{ p.code }} TCX){% endif %}</div>
-                <div class="tile-role">Top match</div>
+                <div class="tile-role">Лучшее совпадение</div>
                 <div class="tile-meta">HEX: <code>{{ p.hex or '—' }}</code></div>
                 <div class="tile-meta">RGB: {{ p.rgb or '—' }}</div>
                 <div class="tile-meta">CMYK: {{ p.cmyk or '—' }}</div>
@@ -66,5 +75,6 @@
         {% endfor %}
     </div>
 </div>
+<script src="/static/copy.js"></script>
 </body>
 </html>

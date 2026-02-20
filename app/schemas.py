@@ -100,3 +100,27 @@ class MatchColorResponse(BaseModel):
     rgb: tuple[int, int, int]
     lab: tuple[float, float, float]
     tcx_matches: list[PantoneMatchModel]
+
+
+class ConvertColorRequest(BaseModel):
+    input_mode: Literal["auto", "hex", "rgb", "cmyk", "lab", "tcx_code", "tcx_name"] = "auto"
+    value: str = Field(min_length=1, max_length=128)
+
+    @field_validator("value")
+    @classmethod
+    def validate_value(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
+class ConvertColorResponse(BaseModel):
+    input_mode: str
+    resolved_mode: Literal["hex", "rgb", "cmyk", "lab", "tcx_code", "tcx_name"]
+    value: str
+    hex: str
+    rgb: tuple[int, int, int]
+    cmyk: tuple[float, float, float, float]
+    lab: tuple[float, float, float]
+    tcx_match: PantoneMatchModel | None = None

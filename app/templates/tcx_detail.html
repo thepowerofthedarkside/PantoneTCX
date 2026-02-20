@@ -8,6 +8,13 @@
 </head>
 <body>
 <div class="container">
+    <nav class="top-menu" aria-label="Главное меню">
+        <a href="/">Главная страница</a>
+        <a href="/#palette-generator">Генератор палитры</a>
+        <a href="/#color-converter">Конвертация цвета</a>
+        <a href="/#photo-analysis">Анализ фото</a>
+    </nav>
+
     <h1>{{ color.code }} — {{ color.name }}</h1>
 
     <div class="tcx-layout">
@@ -17,14 +24,14 @@
                     <div class="swatch tile-swatch" style="background: {{ color.hex }};"></div>
                 </a>
                 <div class="tile-title">{{ color.name }}{% if color.code %} ({{ color.code }} TCX){% endif %}</div>
-                <div class="tile-role">Base Color</div>
+                <div class="tile-role">Базовый цвет</div>
                 <div class="tile-meta">HEX: <code>{{ color.hex }}</code></div>
                 <div class="tile-meta">RGB: {{ color.rgb }}</div>
                 <div class="tile-meta">CMYK: {{ color.cmyk }}</div>
                 <div class="tile-meta">LAB: {{ color.lab }}</div>
             </div>
 
-            <h2>Shades</h2>
+            <h2>Оттенки</h2>
             <div class="palette-grid">
                 {% for s in color.shades %}
                 {% set n = s.nearest_tcx %}
@@ -81,7 +88,7 @@
                 <a class="color-tile" href="/tcx/{{ s.code }}">
                     <div class="swatch tile-swatch" style="background: {{ s.hex or '#cccccc' }};"></div>
                     <div class="tile-title">{{ s.name }}{% if s.code %} ({{ s.code }} TCX){% endif %}</div>
-                    <div class="tile-role">Similar</div>
+                    <div class="tile-role">Похожий цвет</div>
                     <div class="tile-meta">HEX: <code>{{ s.hex or '—' }}</code></div>
                     <div class="tile-meta">RGB: {{ s.rgb or '—' }}</div>
                     <div class="tile-meta">CMYK: {{ s.cmyk or '—' }}</div>
@@ -94,7 +101,7 @@
         <aside>
             <h2>Палитра коллекции</h2>
             <div class="color-card" style="margin-bottom: 10px;">
-                <p>Построено с этим цветом как <strong>base</strong>.</p>
+                <p>Построено с этим цветом как <strong>база</strong>.</p>
             </div>
             <div class="palette-grid palette-grid-compact">
                 {% for item in color.collection_preview %}
@@ -110,7 +117,7 @@
                     <div class="tile-title">
                         {{ top.name if top else 'Без названия' }}{% if top and top.code %} ({{ top.code }} TCX){% endif %}
                     </div>
-                    <div class="tile-role">{{ item.role }} ({{ item.percent }}%)</div>
+                    <div class="tile-role">{% if item.role == "base" %}база{% elif item.role == "support" %}поддержка{% else %}акцент{% endif %} ({{ item.percent }}%)</div>
                     <div class="tile-meta">HEX: <code>{{ item.hex }}</code></div>
                     <div class="tile-meta">RGB: {{ item.rgb }}</div>
                     <div class="tile-meta">CMYK: {{ item.cmyk }}</div>
@@ -123,5 +130,6 @@
 
     <a class="button secondary" href="/">На главную</a>
 </div>
+<script src="/static/copy.js"></script>
 </body>
 </html>

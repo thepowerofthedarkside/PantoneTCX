@@ -33,6 +33,28 @@ def test_health(tmp_path: Path):
     assert r.json()["status"] == "ok"
 
 
+def test_index_has_seo_tags(tmp_path: Path):
+    client = _client(tmp_path)
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "<meta name=\"description\"" in res.text
+    assert "<link rel=\"canonical\"" in res.text
+    assert "application/ld+json" in res.text
+
+
+def test_robots_and_sitemap(tmp_path: Path):
+    client = _client(tmp_path)
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200
+    assert "User-agent: *" in robots.text
+    assert "Sitemap:" in robots.text
+
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.status_code == 200
+    assert "<urlset" in sitemap.text
+    assert "<loc>" in sitemap.text
+
+
 def test_generate_and_get_by_id(tmp_path: Path):
     client = _client(tmp_path)
     payload = {
@@ -182,13 +204,35 @@ def test_api_tcx_detail_by_code(tmp_path: Path):
     assert data["name"].lower() == "ecru olive"
 
 
+def test_api_color_convert_from_hex(tmp_path: Path):
+    client = _client(tmp_path)
+    res = client.post("/api/color/convert", json={"input_mode": "auto", "value": "#927B3C"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["hex"] == "#927B3C"
+    assert data["resolved_mode"] == "hex"
+    assert len(data["rgb"]) == 3
+    assert len(data["cmyk"]) == 4
+    assert len(data["lab"]) == 3
+    assert data["tcx_match"] is not None
+
+
+def test_api_color_convert_from_tcx_code(tmp_path: Path):
+    client = _client(tmp_path)
+    res = client.post("/api/color/convert", json={"input_mode": "auto", "value": "17-0836"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["resolved_mode"] == "tcx_code"
+    assert data["hex"] == "#927B3C"
+
+
 def test_ui_tcx_detail_page(tmp_path: Path):
     client = _client(tmp_path)
     res = client.get("/tcx/17-0836")
     assert res.status_code == 200
     assert "17-0836" in res.text
     assert "Ecru Olive" in res.text
-    assert "Shades" in res.text
+    assert "Оттенки" in res.text
     assert "Цветовые гармонии" in res.text
     assert "Палитра коллекции" in res.text
     assert "Источник:" not in res.text

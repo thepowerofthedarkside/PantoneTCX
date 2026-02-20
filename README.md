@@ -1,8 +1,17 @@
 ﻿# Генератор палитры коллекции
 
-MVP-сервис на FastAPI для генерации палитры 5-7 цветов с ролями, проверками в LAB/LCH, подбором Pantone-аналогов (через подключаемый провайдер) и экспортом в PDF A4.
+Минимальный сервис на FastAPI для генерации палитры 5-7 цветов с ролями, проверками в LAB/LCH, подбором Pantone-аналогов (через подключаемый провайдер) и экспортом в PDF A4.
 
-## Запуск
+## Что добавлено для публикации в интернет
+
+- Продакшен-конфиг через переменные окружения (`APP_ENV`, `TRUSTED_HOSTS`, `CORS_ALLOW_ORIGINS`, пути к БД).
+- Запуск через `gunicorn + uvicorn workers` (подходит для Render/Railway/Fly.io/VPS).
+- Контейнеризация: `Dockerfile` + `.dockerignore`.
+- `Procfile` для платформ с веб-процессом.
+- `.env.example` с готовыми параметрами.
+- Исправлены зависимости для продакшена (`Pillow`, `gunicorn`).
+
+## Локальный запуск
 
 ```bash
 python -m venv .venv
@@ -12,20 +21,64 @@ python -m venv .venv
 
 Открыть: `http://127.0.0.1:8000/`
 
+## Продакшен-запуск (без Docker)
+
+```bash
+python -m venv .venv
+.venv\\Scripts\\pip install -r requirements.txt
+copy .env.example .env
+```
+
+Минимально настройте в `.env`:
+- `TRUSTED_HOSTS=your-domain.com,www.your-domain.com`
+- `CORS_ALLOW_ORIGINS=https://your-domain.com`
+
+Запуск:
+
+```bash
+gunicorn app.main:app -k uvicorn.workers.UvicornWorker --workers 2 --timeout 120 --bind 0.0.0.0:%PORT%
+```
+
+## Запуск в Docker
+
+Сборка:
+
+```bash
+docker build -t pantone-tcx .
+```
+
+Запуск:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e APP_ENV=production \
+  -e TRUSTED_HOSTS=localhost,127.0.0.1 \
+  -e CORS_ALLOW_ORIGINS=http://localhost:8000 \
+  pantone-tcx
+```
+
+## Рекомендуемая публикация
+
+1. Развернуть на Render/Railway/Fly.io (или VPS).
+2. Указать стартовую команду из `Procfile`.
+3. Прописать переменные окружения из `.env.example`.
+4. Настроить домен и HTTPS.
+5. Для постоянных данных подключить том и задать `PALETTE_DB_PATH` в каталог тома.
+
 ## API
 
 - `POST /api/palette/generate`
 - `GET /api/palette/{id}`
 - `GET /api/palette/{id}/pdf`
-- `POST /api/photo/tcx` (multipart: `image`, optional `count`)
-- `POST /api/tcx/match-color` (JSON: `hex`, optional `k`)
+- `POST /api/photo/tcx` (multipart: `image`, необязательный `count`)
+- `POST /api/tcx/match-color` (JSON: `hex`, необязательный `k`)
 - `GET /api/tcx/{code}` (детальная карточка TCX по коду)
 - `GET /health`
 
-### Ключевой цвет (новое)
+### Ключевой цвет
 
 Можно передавать:
-- legacy: `key_color: "#D26C31"` (HEX)
+- устаревший формат: `key_color: "#D26C31"` (HEX)
 - расширенно: `key_color_mode` + `key_color_value`
   - `key_color_role`: `accent` (по умолчанию) или `base`
   - `seed` (опционально): фиксирует повторяемую генерацию; если не передан, палитра случайная на каждый запуск
@@ -36,35 +89,8 @@ python -m venv .venv
   - `tcx_code`: `17-0836`
   - `tcx_name`: `Ecru Olive`
 
-### Анализ фото в TCX
-
-- UI: на главной странице блок "Определить цвета из фото (TCX)".
-- UI: на главной странице блок "Пипетка: выбрать цвет на фото" для точечного выбора пикселя и `TCX top-3`.
-- UI: каждый `TCX` код/название в результатах кликабелен и ведет на страницу `/tcx/{code}` с деталями и похожими цветами.
-- API:
-  - `POST /api/photo/tcx`
-  - `Content-Type: multipart/form-data`
-  - поля:
-    - `image`: файл изображения
-    - `count`: сколько доминирующих цветов извлечь (1..12, по умолчанию 6)
-  - `POST /api/tcx/match-color`
-  - `Content-Type: application/json`
-  - body: `{ "hex": "#927B3C", "k": 3 }`
-
-## Архитектура
-
-- `app/services/color_math.py` - HEX/RGB/LAB/LCH/CMYK, DeltaE00
-- `app/services/pantone_provider.py` - интерфейс `ColorLibraryProvider` и CSV-реализация
-- `app/services/palette_service.py` - генерация ролей/цветов + проверки
-- `app/services/storage.py` - sqlite-хранилище результатов
-- `app/services/pdf_export.py` - PDF A4
-- `app/routes.py` - API и UI маршруты
-
-Справочник Pantone загружается из `data/pantone_stub.csv` и может быть заменен на лицензированный источник без изменения `palette_service`.
-
 ## Тесты
 
 ```bash
 .venv\\Scripts\\pytest -q
 ```
-

@@ -3,109 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор палитры</title>
+    <title>{{ seo.title }}</title>
+    <meta name="description" content="{{ seo.description }}">
+    <meta name="keywords" content="{{ seo.keywords }}">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <link rel="canonical" href="{{ seo.canonical }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:title" content="{{ seo.title }}">
+    <meta property="og:description" content="{{ seo.description }}">
+    <meta property="og:url" content="{{ seo.canonical }}">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ seo.title }}">
+    <meta name="twitter:description" content="{{ seo.description }}">
+
     <link rel="stylesheet" href="/static/styles.css">
+
+    {% for ld in seo.structured_data %}
+    <script type="application/ld+json">{{ ld | safe }}</script>
+    {% endfor %}
 </head>
 <body>
 <div class="container">
-    <h1>Генератор палитры коллекции</h1>
-    <form method="post" action="/generate" class="form-grid">
-        <label>Сезон
-            <select name="season">
-                <option value="none" {% if defaults.season == 'none' %}selected{% endif %}>none</option>
-                <option value="SS" {% if defaults.season == 'SS' %}selected{% endif %}>SS</option>
-                <option value="FW" {% if defaults.season == 'FW' %}selected{% endif %}>FW</option>
-            </select>
-        </label>
+    <nav class="top-menu" aria-label="Главное меню">
+        <a href="/">Главная страница</a>
+        <a href="#palette-generator">Генератор палитры</a>
+        <a href="#color-converter">Конвертация цвета</a>
+        <a href="#photo-analysis">Анализ фото</a>
+    </nav>
 
-        <label>Аудитория
-            <select name="audience">
-                <option value="none" {% if defaults.audience == 'none' %}selected{% endif %}>none</option>
-                <option value="mass" {% if defaults.audience == 'mass' %}selected{% endif %}>mass</option>
-                <option value="middle" {% if defaults.audience == 'middle' %}selected{% endif %}>middle</option>
-                <option value="premium" {% if defaults.audience == 'premium' %}selected{% endif %}>premium</option>
-            </select>
-        </label>
+    <header class="hero">
+        <h1>Генератор палитры коллекции и конвертер цвета</h1>
+        <p class="lead">
+            Онлайн-инструмент для fashion и дизайна: создавайте палитры 5-7 цветов,
+            конвертируйте HEX/RGB/CMYK/LAB, сопоставляйте оттенки с Pantone TCX и анализируйте цвета по фото.
+        </p>
+    </header>
 
-        <label>Стиль
-            <select name="style">
-                <option value="none" {% if defaults.style == 'none' %}selected{% endif %}>none</option>
-                <option value="minimal" {% if defaults.style == 'minimal' %}selected{% endif %}>minimal</option>
-                <option value="street" {% if defaults.style == 'street' %}selected{% endif %}>street</option>
-                <option value="romantic" {% if defaults.style == 'romantic' %}selected{% endif %}>romantic</option>
-                <option value="classic" {% if defaults.style == 'classic' %}selected{% endif %}>classic</option>
-                <option value="sport" {% if defaults.style == 'sport' %}selected{% endif %}>sport</option>
-            </select>
-        </label>
-
-        <label>Формат ключевого цвета
-            <select name="key_color_mode">
-                <option value="hex" {% if defaults.key_color_mode == 'hex' %}selected{% endif %}>HEX</option>
-                <option value="rgb">RGB</option>
-                <option value="cmyk">CMYK</option>
-                <option value="lab">LAB</option>
-                <option value="tcx_code">TCX номер</option>
-                <option value="tcx_name">TCX название</option>
-            </select>
-        </label>
-
-        <label>Значение ключевого цвета
-            <input name="key_color_value" value="{{ defaults.key_color_value }}" placeholder="#D26C31 | 210,108,49 | 0,49,77,18 | 58,25,45 | 17-0836 | Ecru Olive">
-        </label>
-
-        <label>Роль ключевого цвета
-            <select name="key_color_role">
-                <option value="accent" {% if defaults.key_color_role == 'accent' %}selected{% endif %}>accent</option>
-                <option value="base" {% if defaults.key_color_role == 'base' %}selected{% endif %}>base</option>
-            </select>
-        </label>
-
-        <label>Количество цветов
-            <input type="number" min="5" max="7" name="count" value="{{ defaults.count }}">
-        </label>
-
-        <button type="submit">Сгенерировать</button>
-    </form>
-
-    <h2 style="margin-top: 20px;">Определить цвета из фото (TCX)</h2>
-    <form method="post" action="/photo/analyze" class="form-grid" enctype="multipart/form-data">
-        <label>Фото
-            <input type="file" name="image" accept="image/*" required>
-        </label>
-        <label>Сколько цветов извлечь
-            <input type="number" name="count" min="1" max="12" value="6">
-        </label>
-        <button type="submit">Анализировать фото</button>
-    </form>
-
-    <h2 style="margin-top: 20px;">Пипетка: выбрать цвет на фото</h2>
-    <div class="form-grid">
-        <label>Фото для пипетки
-            <input type="file" id="pipetteImageInput" accept="image/*">
-        </label>
-        <label>Подсказка
-            <input value="Загрузите фото и кликните по изображению" readonly>
-        </label>
-    </div>
-
-    <div class="picker-wrap">
-        <canvas id="pipetteCanvas" class="picker-canvas"></canvas>
-        <div class="picker-side">
-            <div class="color-tile">
-                <a id="pickedSwatchLink" href="#" class="swatch-link" style="pointer-events: none;">
-                    <div id="pickedSwatch" class="swatch tile-swatch"></div>
-                </a>
-                <div class="tile-title" id="pickedName">Без названия</div>
-                <div class="tile-role">Picked Color</div>
-                <div class="tile-meta">HEX: <code id="pickedHex">—</code></div>
-                <div class="tile-meta">RGB: <span id="pickedRgb">—</span></div>
-                <div class="tile-meta">CMYK: <span id="pickedCmyk">—</span></div>
-                <div class="tile-meta">LAB: <span id="pickedLab">—</span></div>
+    <main>
+        <section class="landing-section" id="about-service">
+            <h2>Онлайн сервис подбора цветовых решений для fashion и дизайна</h2>
+            <p class="seo-text">
+                Этот сайт объединяет генератор цветовой палитры, конвертер цвета и инструмент сопоставления с Pantone TCX.
+                Платформа помогает быстро собрать цветовую карту коллекции, проверить сочетаемость оттенков и подготовить
+                данные для дизайнеров, контент-команды, маркетплейсов и e-commerce карточек товаров.
+            </p>
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <h3>Генерация палитры</h3>
+                    <p>Автоматически формирует цветовую палитру коллекции с ролями цветов и балансом по процентам.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Конвертация форматов</h3>
+                    <p>Преобразует HEX, RGB, CMYK, LAB и TCX в единый набор значений для печати и цифровых носителей.</p>
+                </article>
+                <article class="feature-card">
+                    <h3>Сопоставление Pantone TCX</h3>
+                    <p>Показывает ближайшие Pantone TCX по DeltaE00 для точного подбора референсных оттенков.</p>
+                </article>
             </div>
-            <p style="margin-top:10px;"><strong>TCX top-3:</strong></p>
-            <div id="pickedMatches" class="tcx-mini-grid"></div>
-        </div>
-    </div>
+        </section>
+
+        <section class="landing-section" id="color-drilldown">
+            <h2>Детальная работа с каждым цветом по клику</h2>
+            <p class="seo-text">
+                Каждый цвет в результатах интерактивный: нажмите на карточку, чтобы открыть расширенную страницу цвета.
+                На этой странице доступны оттенки выбранного цвета, цветовые гармонии и готовая палитра коллекции,
+                построенная на его основе. Это помогает быстро углубить проработку цветовой концепции без ручных расчетов.
+            </p>
+        </section>
+
+        <section class="landing-section" id="palette-generator">
+            <h2>Генератор палитры по параметрам коллекции</h2>
+            <p class="seo-text">
+                Используйте генератор палитры, если нужно быстро получить рабочую цветовую систему для коллекции одежды,
+                капсулы, брендинга или сезонной линейки. Укажите сезон, стиль и аудиторию, а сервис соберет
+                оптимальную комбинацию оттенков с проверкой различимости цветов.
+            </p>
+            <form method="post" action="/generate" class="form-grid">
+                <label>Сезон
+                    <select name="season">
+                        <option value="none" {% if defaults.season == 'none' %}selected{% endif %}>не задан</option>
+                        <option value="SS" {% if defaults.season == 'SS' %}selected{% endif %}>SS</option>
+                        <option value="FW" {% if defaults.season == 'FW' %}selected{% endif %}>FW</option>
+                    </select>
+                </label>
+
+                <label>Аудитория
+                    <select name="audience">
+                        <option value="none" {% if defaults.audience == 'none' %}selected{% endif %}>не задана</option>
+                        <option value="mass" {% if defaults.audience == 'mass' %}selected{% endif %}>массовая</option>
+                        <option value="middle" {% if defaults.audience == 'middle' %}selected{% endif %}>средний сегмент</option>
+                        <option value="premium" {% if defaults.audience == 'premium' %}selected{% endif %}>премиум</option>
+                    </select>
+                </label>
+
+                <label>Стиль
+                    <select name="style">
+                        <option value="none" {% if defaults.style == 'none' %}selected{% endif %}>не задан</option>
+                        <option value="minimal" {% if defaults.style == 'minimal' %}selected{% endif %}>минимализм</option>
+                        <option value="street" {% if defaults.style == 'street' %}selected{% endif %}>стрит</option>
+                        <option value="romantic" {% if defaults.style == 'romantic' %}selected{% endif %}>романтика</option>
+                        <option value="classic" {% if defaults.style == 'classic' %}selected{% endif %}>классика</option>
+                        <option value="sport" {% if defaults.style == 'sport' %}selected{% endif %}>спорт</option>
+                    </select>
+                </label>
+
+                <label>Формат ключевого цвета
+                    <select name="key_color_mode">
+                        <option value="hex" {% if defaults.key_color_mode == 'hex' %}selected{% endif %}>HEX</option>
+                        <option value="rgb">RGB</option>
+                        <option value="cmyk">CMYK</option>
+                        <option value="lab">LAB</option>
+                        <option value="tcx_code">TCX номер</option>
+                        <option value="tcx_name">TCX название</option>
+                    </select>
+                </label>
+
+                <label>Значение ключевого цвета
+                    <input name="key_color_value" value="{{ defaults.key_color_value }}" placeholder="#D26C31 | 210,108,49 | 0,49,77,18 | 58,25,45 | 17-0836 | Ecru Olive">
+                </label>
+
+                <label>Роль ключевого цвета
+                    <select name="key_color_role">
+                        <option value="accent" {% if defaults.key_color_role == 'accent' %}selected{% endif %}>акцент</option>
+                        <option value="base" {% if defaults.key_color_role == 'base' %}selected{% endif %}>база</option>
+                    </select>
+                </label>
+
+                <label>Количество цветов
+                    <input type="number" min="5" max="7" name="count" value="{{ defaults.count }}">
+                </label>
+
+                <button type="submit">Сгенерировать</button>
+            </form>
+        </section>
+
+        <section class="landing-section" id="color-converter">
+            <h2 style="margin-top: 20px;">Конвертация цвета</h2>
+            <p class="seo-text">
+                Вставьте одно значение цвета и получите конвертацию в HEX, RGB, CMYK и LAB.
+                Инструмент удобен для подготовки технических заданий, презентаций, печатных макетов и передачи цвета между командами.
+                После конвертации сервис также покажет ближайший Pantone TCX.
+            </p>
+            <div class="form-grid">
+                <label>Формат входа
+                    <select id="convertMode">
+                        <option value="auto" selected>Автоопределение</option>
+                        <option value="hex">HEX</option>
+                        <option value="rgb">RGB</option>
+                        <option value="cmyk">CMYK</option>
+                        <option value="lab">LAB</option>
+                        <option value="tcx_code">TCX код</option>
+                        <option value="tcx_name">TCX название</option>
+                    </select>
+                </label>
+                <label>Значение цвета
+                    <input id="convertValue" placeholder="#D26C31 | 210,108,49 | 0,49,77,18 | 58,25,45 | 17-0836 | Ecru Olive">
+                </label>
+                <button type="button" id="convertButton">Конвертировать</button>
+            </div>
+            <div class="palette-grid" id="convertResultWrap" style="display:none;">
+                <div class="color-tile">
+                    <div id="convertSwatch" class="swatch tile-swatch"></div>
+                    <div class="tile-title">Результат конвертации</div>
+                    <div class="tile-meta">Определенный формат: <strong id="convertResolvedMode">—</strong></div>
+                    <div class="tile-meta">HEX: <code id="convertHex">—</code></div>
+                    <div class="tile-meta">RGB: <span id="convertRgb">—</span></div>
+                    <div class="tile-meta">CMYK: <span id="convertCmyk">—</span></div>
+                    <div class="tile-meta">LAB: <span id="convertLab">—</span></div>
+                </div>
+                <a class="color-tile" id="convertTcxLink" href="#" style="pointer-events:none;">
+                    <div class="swatch tile-swatch" id="convertTcxSwatch" style="background:#cccccc;"></div>
+                    <div class="tile-title" id="convertTcxName">Ближайший TCX</div>
+                    <div class="tile-role">Лучшее совпадение</div>
+                    <div class="tile-meta">Код: <span id="convertTcxCode">—</span></div>
+                    <div class="tile-meta">HEX: <code id="convertTcxHex">—</code></div>
+                    <div class="tile-meta">ΔE00: <span id="convertTcxDelta">—</span></div>
+                </a>
+            </div>
+        </section>
+
+        <section class="landing-section" id="photo-analysis">
+            <h2 style="margin-top: 20px;">Определить цвета из фото (TCX)</h2>
+            <p class="seo-text">
+                Загрузите изображение, чтобы извлечь доминирующие цвета с автоматическим сопоставлением к Pantone TCX.
+                Это полезно для анализа трендов, мудбордов, референсов конкурентов и визуальных концепций коллекции.
+            </p>
+            <form method="post" action="/photo/analyze" class="form-grid" enctype="multipart/form-data">
+                <label>Фото
+                    <input type="file" name="image" accept="image/*" required>
+                </label>
+                <label>Сколько цветов извлечь
+                    <input type="number" name="count" min="1" max="12" value="6">
+                </label>
+                <button type="submit">Анализировать фото</button>
+            </form>
+
+            <h3 style="margin-top: 20px;">Пипетка: выбрать цвет на фото</h3>
+            <div class="form-grid">
+                <label>Фото для пипетки
+                    <input type="file" id="pipetteImageInput" accept="image/*">
+                </label>
+                <label>Подсказка
+                    <input value="Загрузите фото и кликните по изображению" readonly>
+                </label>
+            </div>
+
+            <div class="picker-wrap">
+                <canvas id="pipetteCanvas" class="picker-canvas"></canvas>
+                <div class="picker-side">
+                    <div class="color-tile">
+                        <a id="pickedSwatchLink" href="#" class="swatch-link" style="pointer-events: none;">
+                            <div id="pickedSwatch" class="swatch tile-swatch"></div>
+                        </a>
+                        <div class="tile-title" id="pickedName">Без названия</div>
+                        <div class="tile-role">Выбранный цвет</div>
+                        <div class="tile-meta">HEX: <code id="pickedHex">—</code></div>
+                        <div class="tile-meta">RGB: <span id="pickedRgb">—</span></div>
+                        <div class="tile-meta">CMYK: <span id="pickedCmyk">—</span></div>
+                        <div class="tile-meta">LAB: <span id="pickedLab">—</span></div>
+                    </div>
+                    <p style="margin-top:10px;"><strong>TCX топ-3:</strong></p>
+                    <div id="pickedMatches" class="tcx-mini-grid"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="landing-section" id="use-cases">
+            <h2>Для кого подходит сервис</h2>
+            <p class="seo-text">
+                Сервис подходит для fashion-брендов, стилистов, color-дизайнеров, продакт-менеджеров, маркетологов и владельцев интернет-магазинов.
+                Вы можете использовать платформу как генератор палитры коллекции, конвертер цветов онлайн и инструмент подбора Pantone TCX.
+            </p>
+        </section>
+
+        <section class="landing-section" id="faq" style="margin-top: 24px;">
+            <h2>Частые вопросы</h2>
+            <details>
+                <summary>Как работает подбор Pantone TCX?</summary>
+                <p>Сервис переводит цвет в пространство LAB и ищет ближайшие TCX оттенки по метрике DeltaE00.</p>
+            </details>
+            <details>
+                <summary>Какие форматы поддерживает конвертер?</summary>
+                <p>HEX, RGB, CMYK, LAB, а также поиск по TCX коду или названию.</p>
+            </details>
+            <details>
+                <summary>Можно ли использовать сервис для интернет-магазина и контента?</summary>
+                <p>Да. Вы можете использовать его для подготовки палитр коллекций, карточек цветов и контент-планирования.</p>
+            </details>
+        </section>
+    </main>
 </div>
 <script>
 (() => {
@@ -183,7 +333,7 @@
         const chip = document.createElement("a");
         chip.className = "tcx-mini-card";
         chip.href = `/tcx/${m.code}`;
-        chip.innerHTML = `<div class=\"swatch shade-swatch\" style=\"background:${m.hex || '#cccccc'}\"></div><div class=\"tile-title\">${m.name}${m.code ? ` (${m.code} TCX)` : ""}</div><div class=\"tile-role\">Top match</div><div class=\"tile-meta\">HEX: <code>${m.hex || '—'}</code></div><div class=\"tile-meta\">RGB: ${m.rgb || '—'}</div><div class=\"tile-meta\">CMYK: ${m.cmyk || '—'}</div><div class=\"tile-meta\">LAB: ${m.lab || '—'}</div>`;
+        chip.innerHTML = `<div class=\"swatch shade-swatch\" style=\"background:${m.hex || '#cccccc'}\"></div><div class=\"tile-title\">${m.name}${m.code ? ` (${m.code} TCX)` : ""}</div><div class=\"tile-role\">Лучшее совпадение</div><div class=\"tile-meta\">HEX: <code>${m.hex || '—'}</code></div><div class=\"tile-meta\">RGB: ${m.rgb || '—'}</div><div class=\"tile-meta\">CMYK: ${m.cmyk || '—'}</div><div class=\"tile-meta\">LAB: ${m.lab || '—'}</div>`;
         matchesEl.appendChild(chip);
       }
       labEl.textContent = data.lab || "—";
@@ -206,6 +356,88 @@
     }
   });
 })();
+
+(() => {
+  const button = document.getElementById("convertButton");
+  const mode = document.getElementById("convertMode");
+  const value = document.getElementById("convertValue");
+  const wrap = document.getElementById("convertResultWrap");
+  const swatch = document.getElementById("convertSwatch");
+  const resolvedMode = document.getElementById("convertResolvedMode");
+  const hexEl = document.getElementById("convertHex");
+  const rgbEl = document.getElementById("convertRgb");
+  const cmykEl = document.getElementById("convertCmyk");
+  const labEl = document.getElementById("convertLab");
+  const tcxLink = document.getElementById("convertTcxLink");
+  const tcxSwatch = document.getElementById("convertTcxSwatch");
+  const tcxName = document.getElementById("convertTcxName");
+  const tcxCode = document.getElementById("convertTcxCode");
+  const tcxHex = document.getElementById("convertTcxHex");
+  const tcxDelta = document.getElementById("convertTcxDelta");
+
+  async function convertColor() {
+    const inputValue = (value.value || "").trim();
+    if (!inputValue) {
+      alert("Введите значение цвета");
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Конвертация...";
+    try {
+      const resp = await fetch("/api/color/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input_mode: mode.value, value: inputValue })
+      });
+      if (!resp.ok) {
+        const errorData = await resp.json().catch(() => null);
+        const detail = errorData && errorData.detail ? errorData.detail : "Ошибка конвертации";
+        alert(typeof detail === "string" ? detail : "Ошибка конвертации");
+        return;
+      }
+
+      const data = await resp.json();
+      wrap.style.display = "grid";
+      swatch.style.background = data.hex;
+      resolvedMode.textContent = data.resolved_mode;
+      hexEl.textContent = data.hex;
+      rgbEl.textContent = data.rgb;
+      cmykEl.textContent = data.cmyk;
+      labEl.textContent = data.lab;
+
+      if (data.tcx_match && data.tcx_match.code) {
+        tcxName.textContent = data.tcx_match.name || "Ближайший TCX";
+        tcxCode.textContent = data.tcx_match.code;
+        tcxHex.textContent = data.tcx_match.hex || "—";
+        tcxDelta.textContent = data.tcx_match.delta_e00;
+        tcxSwatch.style.background = data.tcx_match.hex || "#cccccc";
+        tcxLink.href = `/tcx/${data.tcx_match.code}`;
+        tcxLink.style.pointerEvents = "auto";
+      } else {
+        tcxName.textContent = "Ближайший TCX не найден";
+        tcxCode.textContent = "—";
+        tcxHex.textContent = "—";
+        tcxDelta.textContent = "—";
+        tcxSwatch.style.background = "#cccccc";
+        tcxLink.href = "#";
+        tcxLink.style.pointerEvents = "none";
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = "Конвертировать";
+    }
+  }
+
+  button.addEventListener("click", convertColor);
+  value.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      convertColor();
+    }
+  });
+})();
 </script>
+<script src="/static/copy.js"></script>
 </body>
 </html>
