@@ -2,10 +2,12 @@
 
 import hashlib
 import json
+import uuid
 from datetime import datetime
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -14,6 +16,8 @@ from pydantic import ValidationError
 from app.schemas import (
     ConvertColorRequest,
     ConvertColorResponse,
+    DonateCreatePaymentRequest,
+    DonateCreatePaymentResponse,
     GeneratePaletteRequest,
     HealthResponse,
     MatchColorRequest,
@@ -391,6 +395,57 @@ def sitemap_xml(request: Request, services: Services = Depends(get_services)) ->
         lines.append("  </url>")
     lines.append("</urlset>")
     return Response(content="\n".join(lines), media_type="application/xml")
+
+
+@router.post("/api/donate/create-payment", response_model=DonateCreatePaymentResponse)
+async def api_donate_create_payment(payload: DonateCreatePaymentRequest, request: Request) -> dict:
+    settings = request.app.state.settings
+    if not settings.yookassa_shop_id or not settings.yookassa_secret_key:
+        raise HTTPException(status_code=503, detail="YooKassa is not configured on server")
+
+    base_url = _base_url(request)
+    return_url = settings.yookassa_return_url or f"{base_url}/"
+    amount_value = f"{payload.amount:.2f}"
+    payment_request = {
+        "amount": {"value": amount_value, "currency": "RUB"},
+        "capture": True,
+        "confirmation": {"type": "embedded"},
+        "description": "Пожертвование на развитие проекта Pantone TCX",
+        "metadata": {"source": "website_donation"},
+    }
+    headers = {
+        "Idempotence-Key": str(uuid.uuid4()),
+        "Content-Type": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(
+                "https://api.yookassa.ru/v3/payments",
+                json=payment_request,
+                auth=(settings.yookassa_shop_id, settings.yookassa_secret_key),
+                headers=headers,
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Failed to reach YooKassa API") from exc
+
+    if resp.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"YooKassa API error: {resp.status_code}")
+
+    data = resp.json()
+    confirmation = data.get("confirmation") or {}
+    token = confirmation.get("confirmation_token")
+    payment_id = data.get("id")
+    if not token or not payment_id:
+        raise HTTPException(status_code=502, detail="YooKassa did not return confirmation token")
+
+    return {
+        "payment_id": payment_id,
+        "confirmation_token": token,
+        "amount": round(payload.amount, 2),
+        "currency": "RUB",
+        "return_url": return_url,
+    }
 
 
 @router.post("/api/tcx/match-color", response_model=MatchColorResponse)

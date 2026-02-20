@@ -124,3 +124,15 @@ class ConvertColorResponse(BaseModel):
     cmyk: tuple[float, float, float, float]
     lab: tuple[float, float, float]
     tcx_match: PantoneMatchModel | None = None
+
+
+class DonateCreatePaymentRequest(BaseModel):
+    amount: float = Field(ge=10.0, le=500000.0)
+
+
+class DonateCreatePaymentResponse(BaseModel):
+    payment_id: str
+    confirmation_token: str
+    amount: float
+    currency: str
+    return_url: str

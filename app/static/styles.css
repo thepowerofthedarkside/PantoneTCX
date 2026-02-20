@@ -96,6 +96,29 @@ h1, h2, h3 { margin: 10px 0; }
   font-size: 13px;
   line-height: 1.45;
 }
+.donate-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.donate-custom {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+.donate-custom .donate-custom-amount {
+  width: 180px;
+}
+.donate-widget-mount {
+  min-height: 120px;
+}
+.donate-status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #335b54;
+}
 
 .form-grid {
   display: grid;

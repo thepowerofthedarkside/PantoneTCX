@@ -72,6 +72,7 @@ docker run --rm -p 8000:8000 \
 - `GET /api/palette/{id}/pdf`
 - `POST /api/photo/tcx` (multipart: `image`, необязательный `count`)
 - `POST /api/tcx/match-color` (JSON: `hex`, необязательный `k`)
+- `POST /api/donate/create-payment` (создание платежа для виджета ЮKassa)
 - `GET /api/tcx/{code}` (детальная карточка TCX по коду)
 - `GET /health`
 
@@ -94,3 +95,13 @@ docker run --rm -p 8000:8000 \
 ```bash
 .venv\\Scripts\\pytest -q
 ```
+
+## ЮKassa виджет
+
+Для блока пожертвований через виджет заполните в `.env`:
+
+- `YOOKASSA_SHOP_ID`
+- `YOOKASSA_SECRET_KEY`
+- `YOOKASSA_RETURN_URL`
+
+После этого внизу страниц будет работать оплата через встроенный виджет ЮKassa.

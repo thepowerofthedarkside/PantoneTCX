@@ -74,12 +74,24 @@
         {% endfor %}
     </div>
 
-    <section class="landing-section" id="donate">
+    <section class="landing-section" id="donate" data-donate-widget>
         <h2>Поддержать бесплатный проект</h2>
-        <p class="seo-text">Если сервис полезен для вашей работы, вы можете поддержать его развитие через ЮKassa.</p>
-        <a class="button" href="https://yookassa.ru/" target="_blank" rel="noopener noreferrer">Пожертвовать через ЮKassa</a>
+        <p class="seo-text">Выберите сумму и оплатите через виджет ЮKassa прямо на сайте.</p>
+        <div class="donate-controls">
+            <button type="button" class="button" data-donate-amount="300">300 ₽</button>
+            <button type="button" class="button" data-donate-amount="500">500 ₽</button>
+            <button type="button" class="button" data-donate-amount="1000">1000 ₽</button>
+        </div>
+        <div class="donate-custom">
+            <input class="donate-custom-amount" type="number" min="10" step="10" placeholder="Своя сумма, ₽">
+            <button type="button" class="button donate-custom-button">Оплатить</button>
+        </div>
+        <div class="donate-widget-mount"></div>
+        <div class="donate-status"></div>
     </section>
 </div>
 <script src="/static/copy.js"></script>
+<script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
+<script src="/static/donate-widget.js"></script>
 </body>
 </html>
