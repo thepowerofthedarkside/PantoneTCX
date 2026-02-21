@@ -149,6 +149,13 @@ def test_ui_index_and_generate(tmp_path: Path):
     assert 'class="swatch-link"' in out.text
 
 
+def test_ui_donate_success_page(tmp_path: Path):
+    client = _client(tmp_path)
+    res = client.get("/donate/success")
+    assert res.status_code == 200
+    assert "Спасибо за поддержку" in res.text
+
+
 def test_ui_generate_without_key_color(tmp_path: Path):
     client = _client(tmp_path)
     form = {
@@ -224,6 +231,33 @@ def test_api_color_convert_from_tcx_code(tmp_path: Path):
     data = res.json()
     assert data["resolved_mode"] == "tcx_code"
     assert data["hex"] == "#927B3C"
+
+
+def test_api_donate_endpoints_not_configured(tmp_path: Path):
+    client = _client(tmp_path)
+    settings = client.app.state.settings
+    client.app.state.settings = type(settings)(
+        app_name=settings.app_name,
+        app_version=settings.app_version,
+        app_env=settings.app_env,
+        hide_docs=settings.hide_docs,
+        palette_db_path=settings.palette_db_path,
+        tcx_db_path=settings.tcx_db_path,
+        pantone_csv_path=settings.pantone_csv_path,
+        trusted_hosts=settings.trusted_hosts,
+        cors_allow_origins=settings.cors_allow_origins,
+        yookassa_shop_id=None,
+        yookassa_secret_key=None,
+        yookassa_return_url=settings.yookassa_return_url,
+    )
+
+    create_res = client.post("/api/donate/create-payment", json={"amount": "300.00"})
+    assert create_res.status_code == 503
+    assert "YooKassa is not configured" in create_res.json()["detail"]
+
+    status_res = client.get("/api/donate/payment-status/test-payment-id")
+    assert status_res.status_code == 503
+    assert "YooKassa is not configured" in status_res.json()["detail"]
 
 
 def test_ui_tcx_detail_page(tmp_path: Path):

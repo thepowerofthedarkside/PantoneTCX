@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -127,12 +128,20 @@ class ConvertColorResponse(BaseModel):
 
 
 class DonateCreatePaymentRequest(BaseModel):
-    amount: float = Field(ge=10.0, le=500000.0)
+    amount: Decimal = Field(ge=Decimal("10.00"), le=Decimal("500000.00"))
 
 
 class DonateCreatePaymentResponse(BaseModel):
     payment_id: str
     confirmation_token: str
-    amount: float
+    amount: Decimal
     currency: str
     return_url: str
+
+
+class DonatePaymentStatusResponse(BaseModel):
+    payment_id: str
+    status: str
+    paid: bool
+    amount: Decimal | None = None
+    currency: str | None = None

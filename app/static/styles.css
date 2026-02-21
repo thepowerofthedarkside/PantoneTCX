@@ -119,6 +119,33 @@ h1, h2, h3 { margin: 10px 0; }
   font-size: 13px;
   color: #335b54;
 }
+.donate-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1200;
+}
+.donate-modal.show {
+  display: block;
+}
+.donate-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.donate-modal-card {
+  position: relative;
+  max-width: 420px;
+  margin: 12vh auto 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  z-index: 1;
+}
+.donate-modal-card h3 {
+  margin-top: 0;
+}
 
 .form-grid {
   display: grid;

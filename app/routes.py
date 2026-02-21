@@ -4,6 +4,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -18,6 +19,7 @@ from app.schemas import (
     ConvertColorResponse,
     DonateCreatePaymentRequest,
     DonateCreatePaymentResponse,
+    DonatePaymentStatusResponse,
     GeneratePaletteRequest,
     HealthResponse,
     MatchColorRequest,
@@ -404,8 +406,9 @@ async def api_donate_create_payment(payload: DonateCreatePaymentRequest, request
         raise HTTPException(status_code=503, detail="YooKassa is not configured on server")
 
     base_url = _base_url(request)
-    return_url = settings.yookassa_return_url or f"{base_url}/"
-    amount_value = f"{payload.amount:.2f}"
+    return_url = settings.yookassa_return_url or f"{base_url}/donate/success"
+    amount = payload.amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    amount_value = str(amount)
     payment_request = {
         "amount": {"value": amount_value, "currency": "RUB"},
         "capture": True,
@@ -416,6 +419,7 @@ async def api_donate_create_payment(payload: DonateCreatePaymentRequest, request
     headers = {
         "Idempotence-Key": str(uuid.uuid4()),
         "Content-Type": "application/json",
+        "Accept": "application/json",
     }
 
     try:
@@ -430,7 +434,16 @@ async def api_donate_create_payment(payload: DonateCreatePaymentRequest, request
         raise HTTPException(status_code=502, detail="Failed to reach YooKassa API") from exc
 
     if resp.status_code >= 400:
-        raise HTTPException(status_code=502, detail=f"YooKassa API error: {resp.status_code}")
+        try:
+            err = resp.json()
+        except ValueError:
+            err = {}
+        err_desc = err.get("description") or err.get("type") or "YooKassa request failed"
+        err_param = err.get("parameter")
+        detail = f"YooKassa API error ({resp.status_code}): {err_desc}"
+        if err_param:
+            detail = f"{detail}; parameter={err_param}"
+        raise HTTPException(status_code=502, detail=detail)
 
     data = resp.json()
     confirmation = data.get("confirmation") or {}
@@ -442,9 +455,47 @@ async def api_donate_create_payment(payload: DonateCreatePaymentRequest, request
     return {
         "payment_id": payment_id,
         "confirmation_token": token,
-        "amount": round(payload.amount, 2),
+        "amount": amount,
         "currency": "RUB",
         "return_url": return_url,
+    }
+
+
+@router.get("/api/donate/payment-status/{payment_id}", response_model=DonatePaymentStatusResponse)
+async def api_donate_payment_status(payment_id: str, request: Request) -> dict:
+    settings = request.app.state.settings
+    if not settings.yookassa_shop_id or not settings.yookassa_secret_key:
+        raise HTTPException(status_code=503, detail="YooKassa is not configured on server")
+
+    headers = {"Accept": "application/json"}
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(
+                f"https://api.yookassa.ru/v3/payments/{payment_id}",
+                auth=(settings.yookassa_shop_id, settings.yookassa_secret_key),
+                headers=headers,
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Failed to reach YooKassa API") from exc
+
+    if resp.status_code >= 400:
+        try:
+            err = resp.json()
+        except ValueError:
+            err = {}
+        err_desc = err.get("description") or err.get("type") or "YooKassa request failed"
+        raise HTTPException(status_code=502, detail=f"YooKassa API error ({resp.status_code}): {err_desc}")
+
+    data = resp.json()
+    amount_raw = data.get("amount") or {}
+    amount_value = amount_raw.get("value")
+    currency = amount_raw.get("currency")
+    return {
+        "payment_id": data.get("id", payment_id),
+        "status": data.get("status", "unknown"),
+        "paid": bool(data.get("paid")),
+        "amount": amount_value,
+        "currency": currency,
     }
 
 
@@ -600,6 +651,17 @@ def index(request: Request) -> HTMLResponse:
             "request": request,
             "defaults": defaults,
             "seo": _index_seo_context(request),
+        },
+    )
+
+
+@router.get("/donate/success", response_class=HTMLResponse)
+def donate_success_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "donate_success.html",
+        {
+            "request": request,
         },
     )
 
