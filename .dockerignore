@@ -1,0 +1,15 @@
+.git
+.gitignore
+.idea
+.pytest_cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+tests
+main.py
+towork.txt
+desktop.ini
+palette_service.sqlite3
